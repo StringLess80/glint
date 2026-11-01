@@ -1,0 +1,6 @@
+# build output
+/build/
+/glint
+
+# AirPlay library downloaded by make
+/third_party/
