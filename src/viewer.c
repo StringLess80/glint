@@ -2,7 +2,6 @@
 /* Window (SDL2) and H.264 decoder (FFmpeg). */
 
 #define _GNU_SOURCE
-#include <langinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -257,57 +256,6 @@ static void toggle_fullscreen(viewer_t *v)
     present(v);
 }
 
-/* SDL's X11 backend converts the title through the current locale and silently
- * drops it if the conversion fails. Outside a UTF-8 locale, send plain ASCII. */
-static void set_title(viewer_t *v, const char *title)
-{
-    if (v->utf8_titles) {
-        SDL_SetWindowTitle(v->win, title);
-        return;
-    }
-    static const struct { const char *utf8, *ascii; } subst[] = {
-        { "—", "-" }, { "→", "->" }, { "…", "..." },
-    };
-    char ascii[256];
-    size_t o = 0;
-    const char *p = title;
-    while (*p && o + 4 < sizeof ascii) {
-        if (!((unsigned char)*p & 0x80)) {
-            ascii[o++] = *p++;
-            continue;
-        }
-        const char *rep = "?";
-        for (size_t i = 0; i < sizeof subst / sizeof subst[0]; i++)
-            if (strncmp(p, subst[i].utf8, strlen(subst[i].utf8)) == 0)
-                rep = subst[i].ascii;
-        for (const char *r = rep; *r && o + 4 < sizeof ascii; r++)
-            ascii[o++] = *r;
-        p++;                                          /* skip the whole UTF-8 sequence */
-        while (((unsigned char)*p & 0xC0) == 0x80)
-            p++;
-    }
-    ascii[o] = '\0';
-    SDL_SetWindowTitle(v->win, ascii);
-}
-
-static void update_title(viewer_t *v)
-{
-    char title[192];
-    if (v->tex)
-        snprintf(title, sizeof title, "Glint — %dx%d — %lu fps", v->tex_w,
-                 v->tex_h, v->shown - v->shown_last);
-    else
-        snprintf(title, sizeof title, "Glint — %s", v->status);
-    set_title(v->win, title);
-    v->shown_last = v->shown;
-}
-
-void viewer_set_status(viewer_t *v, const char *text)
-{
-    snprintf(v->status, sizeof v->status, "%s", text);
-    update_title(v);
-}
-
 static void handle_event(viewer_t *v, const SDL_Event *e)
 {
     switch (e->type) {
@@ -374,17 +322,10 @@ void viewer_poll(viewer_t *v, int wait_ms)
         v->tex = NULL;
         v->tex_w = v->tex_h = 0;
         present(v);
-        update_title(v);
     }
     if (have_frame) {
         show_frame(v, v->display);
         av_frame_unref(v->display);
-    }
-
-    uint64_t now = now_ns();
-    if (now - v->t_title >= 1000000000ull) {
-        update_title(v);
-        v->t_title = now;
     }
 }
 
@@ -396,11 +337,6 @@ int viewer_init(viewer_t *v, int fullscreen, int verbose)
 {
     memset(v, 0, sizeof *v);
     v->verbose = verbose;
-    
-    const char *codeset = nl_langinfo(CODESET);
-    v->utf8_titles = codeset && strcmp(codeset, "UTF-8") == 0;
-    
-    snprintf(v->status, sizeof v->status, "waiting for video…");
 
     v->pkt = av_packet_alloc();
     v->frame = av_frame_alloc();
@@ -433,7 +369,6 @@ int viewer_init(viewer_t *v, int fullscreen, int verbose)
     if (fullscreen)
         toggle_fullscreen(v);
     present(v);
-    update_title(v);
     return 0;
 }
 

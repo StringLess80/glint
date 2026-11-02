@@ -7,7 +7,7 @@
 #include "airplay.c"   /* included directly so the static callbacks can be called */
 
 volatile sig_atomic_t g_running = 1;
-uint64_t now_ns(void)
+static uint64_t now_ns(void)
 {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);

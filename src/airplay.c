@@ -419,7 +419,8 @@ static int start_receiver(receiver_t *rx)
     dnssd_set_airplay_features(rx->dnssd, 0, 0);    /* no HLS video (YouTube & co.)      */
     dnssd_set_airplay_features(rx->dnssd, 4, 0);
     dnssd_set_airplay_features(rx->dnssd, 42, 0);   /* H.264 only, no H.265              */
-    dnssd_set_airplay_features(rx->dnssd, 27, 0);   /* AirPlay 2 pairing, not the legacy one */
+    dnssd_set_airplay_features(rx->dnssd, 27, 0);   /* no "legacy pairing": the iPad skips the
+                                                       pairing step and connects faster (UxPlay's default) */
 
     /* 2) AirPlay server */
     raop_callbacks_t cbs;
@@ -557,9 +558,6 @@ int airplay_run(const options_t *o)
     if (start_receiver(&rx) != 0)
         goto out;
 
-    char status[sizeof rx.name + 64];
-    snprintf(status, sizeof status, "on the iPad: Screen Mirroring → \"%s\"", rx.name);
-    viewer_set_status(&v, status);
     printf("Ready. On the iPad open Control Center → Screen Mirroring → \"%s\".\n"
            "(F = fullscreen, Q = quit)\n", rx.name);
 

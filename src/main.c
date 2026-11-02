@@ -9,11 +9,9 @@
 
 #define _GNU_SOURCE
 #include <getopt.h>
-#include <locale.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #include <SDL.h>
 
@@ -21,13 +19,6 @@
 
 volatile sig_atomic_t g_running = 1;
 static void on_signal(int sig) { (void)sig; g_running = 0; }
-
-uint64_t now_ns(void)
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
-}
 
 static void usage(const char *prog)
 {
@@ -46,12 +37,6 @@ static void usage(const char *prog)
 
 int main(int argc, char **argv)
 {
-    /* Use the user's locale for character encoding (LC_CTYPE only). SDL's X11
-     * backend converts window titles through it: in the default "C" locale a
-     * title containing characters such as "—" or "→" never reaches the window
-     * manager, which keeps showing the initial title. */
-    setlocale(LC_CTYPE, "");
-
     options_t o = { 0 };
     int opt;
     while ((opt = getopt(argc, argv, "n:p:afvh")) != -1) {

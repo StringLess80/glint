@@ -17,8 +17,6 @@ typedef struct {
 /* Set to 0 by Ctrl-C, by closing the window or by pressing Q */
 extern volatile sig_atomic_t g_running;
 
-uint64_t now_ns(void);
-
 int airplay_run(const options_t *o);       /* airplay.c */
 
 #endif

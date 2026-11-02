@@ -27,11 +27,7 @@ typedef struct {
     AVFrame *display;
     struct SwsContext *sws;        /* YCbCr -> RGB conversion */
     int sws_w, sws_h, sws_fmt, sws_matrix, sws_full;
-    unsigned long shown, shown_last;
-    uint64_t t_title;
-    char status[128];              /* window title while there is no video */
-
-    int utf8_titles;               /* the locale is UTF-8: titles may use non-ASCII characters */
+    unsigned long shown;           /* frames shown so far */
 
     /* decoder: protected by dec_lock */
     SDL_mutex *dec_lock;
@@ -60,9 +56,6 @@ void viewer_decode(viewer_t *v, const uint8_t *data, size_t len);
 
 /* Clears the window (e.g. when the iPad stops mirroring) */
 void viewer_clear(viewer_t *v);
-
-/* Text shown in the window title while there is no video (main thread) */
-void viewer_set_status(viewer_t *v, const char *text);
 
 /* Handles events and shows the most recent frame. Waits at most wait_ms. */
 void viewer_poll(viewer_t *v, int wait_ms);

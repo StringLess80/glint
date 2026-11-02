@@ -90,7 +90,7 @@ To stop, tap **Stop Mirroring** on the iPad or close the window.
 | `Esc` | Leave fullscreen (or quit) |
 | `Q` or closing the window | Quit |
 
-The window title shows the video resolution and frame rate.
+The window resizes itself when you rotate the iPad.
 
 ## Firewall
 
