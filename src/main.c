@@ -68,6 +68,8 @@ int main(int argc, char **argv)
     signal(SIGINT, on_signal);
     signal(SIGTERM, on_signal);
 
+    setenv("AVAHI_COMPAT_NOWARN", "1", 0);
+
     int rc = airplay_run(&o);
     SDL_Quit();
     return rc;
