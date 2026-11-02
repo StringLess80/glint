@@ -2,6 +2,7 @@
 /* Window (SDL2) and H.264 decoder (FFmpeg). */
 
 #define _GNU_SOURCE
+#include <langinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -256,6 +257,39 @@ static void toggle_fullscreen(viewer_t *v)
     present(v);
 }
 
+/* SDL's X11 backend converts the title through the current locale and silently
+ * drops it if the conversion fails. Outside a UTF-8 locale, send plain ASCII. */
+static void set_title(viewer_t *v, const char *title)
+{
+    if (v->utf8_titles) {
+        SDL_SetWindowTitle(v->win, title);
+        return;
+    }
+    static const struct { const char *utf8, *ascii; } subst[] = {
+        { "—", "-" }, { "→", "->" }, { "…", "..." },
+    };
+    char ascii[256];
+    size_t o = 0;
+    const char *p = title;
+    while (*p && o + 4 < sizeof ascii) {
+        if (!((unsigned char)*p & 0x80)) {
+            ascii[o++] = *p++;
+            continue;
+        }
+        const char *rep = "?";
+        for (size_t i = 0; i < sizeof subst / sizeof subst[0]; i++)
+            if (strncmp(p, subst[i].utf8, strlen(subst[i].utf8)) == 0)
+                rep = subst[i].ascii;
+        for (const char *r = rep; *r && o + 4 < sizeof ascii; r++)
+            ascii[o++] = *r;
+        p++;                                          /* skip the whole UTF-8 sequence */
+        while (((unsigned char)*p & 0xC0) == 0x80)
+            p++;
+    }
+    ascii[o] = '\0';
+    SDL_SetWindowTitle(v->win, ascii);
+}
+
 static void update_title(viewer_t *v)
 {
     char title[192];
@@ -264,7 +298,7 @@ static void update_title(viewer_t *v)
                  v->tex_h, v->shown - v->shown_last);
     else
         snprintf(title, sizeof title, "Glint — %s", v->status);
-    SDL_SetWindowTitle(v->win, title);
+    set_title(v->win, title);
     v->shown_last = v->shown;
 }
 
@@ -362,6 +396,10 @@ int viewer_init(viewer_t *v, int fullscreen, int verbose)
 {
     memset(v, 0, sizeof *v);
     v->verbose = verbose;
+    
+    const char *codeset = nl_langinfo(CODESET);
+    v->utf8_titles = codeset && strcmp(codeset, "UTF-8") == 0;
+    
     snprintf(v->status, sizeof v->status, "waiting for video…");
 
     v->pkt = av_packet_alloc();

@@ -31,6 +31,8 @@ typedef struct {
     uint64_t t_title;
     char status[128];              /* window title while there is no video */
 
+    int utf8_titles;               /* the locale is UTF-8: titles may use non-ASCII characters */
+
     /* decoder: protected by dec_lock */
     SDL_mutex *dec_lock;
     AVCodecContext *dec;

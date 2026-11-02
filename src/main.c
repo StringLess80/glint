@@ -9,6 +9,7 @@
 
 #define _GNU_SOURCE
 #include <getopt.h>
+#include <locale.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,12 @@ static void usage(const char *prog)
 
 int main(int argc, char **argv)
 {
+    /* Use the user's locale for character encoding (LC_CTYPE only). SDL's X11
+     * backend converts window titles through it: in the default "C" locale a
+     * title containing characters such as "—" or "→" never reaches the window
+     * manager, which keeps showing the initial title. */
+    setlocale(LC_CTYPE, "");
+
     options_t o = { 0 };
     int opt;
     while ((opt = getopt(argc, argv, "n:p:afvh")) != -1) {
@@ -68,6 +75,8 @@ int main(int argc, char **argv)
     signal(SIGINT, on_signal);
     signal(SIGTERM, on_signal);
 
+    /* Avahi warns on every start that we use its Bonjour compatibility API (which
+     * UxPlay's library needs); the warning is harmless, so silence it. */
     setenv("AVAHI_COMPAT_NOWARN", "1", 0);
 
     int rc = airplay_run(&o);
